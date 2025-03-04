@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Code Collaborator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            animation: backgroundAnimation 8s infinite alternate;
+        }
+
+        @keyframes backgroundAnimation {
+            0% { background: linear-gradient(135deg, #0d0d0d, #271564); }
+            50% { background: linear-gradient(135deg, #101c3d, #2a2a2a); }
+            100% { background: linear-gradient(135deg, #0d0d0d, #271564); }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            background: linear-gradient(to right, #00ffcc, #0077ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px #00ffcc, 0 0 20px #0077ff; }
+            100% { text-shadow: 0 0 20px #00ffcc, 0 0 40px #0077ff; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            padding: 20px;
+        }
+
+        .buttons a {
+            display: inline-block;
+            margin: 15px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: 0.3s ease-in-out;
+            color: #ffffff;
+            border: 2px solid #00ffcc;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 255, 204, 0.1);
+        }
+
+        .buttons a:hover {
+            background: #00ffcc;
+            color: #0d0d0d;
+            box-shadow: 0 0 15px #00ffcc, 0 0 30px #0077ff;
+            transform: scale(1.05);
+        }
+
+        .terminal {
+            font-size: 1.2em;
+            background: rgba(10, 10, 10, 0.9);
+            padding: 15px 30px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 20px;
+            box-shadow: 0px 0px 15px rgba(0, 255, 255, 0.5);
+            border-left: 3px solid #00ffcc;
+            color: #00ff00;
+            white-space: nowrap;
+            overflow: hidden;
+            width: fit-content;
+            animation: typing s steps(30, end), blink 0.8s infinite;
+        }
+
+        .terminal::after {
+            content: '|';
+            color: #00ff00;
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: fit-content; }
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Floating Dots Animation */
+        .floating-dots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #00ffcc;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: floatAnimation 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatAnimation {
+            0% { transform: translateY(0px); opacity: 0.5; }
+            100% { transform: translateY(-30px); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-dots"></div>
+    <div class="container">
+        <h1>Online Code Collaborator</h1>
+        <p class="terminal">Collaborate, code, and innovate together.</p>
+        <div class="buttons">
+            <a href="{{ url_for('signup') }}">Sign Up</a>
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+    </div>
+
+    <script>
+        // Generate floating dots
+        const numDots = 15;
+        const floatingDotsContainer = document.querySelector(".floating-dots");
+
+        for (let i = 0; i < numDots; i++) {
+            const dot = document.createElement("div");
+            dot.classList.add("dot");
+            dot.style.left = `${Math.random() * 100}vw`;
+            dot.style.top = `${Math.random() * 100}vh`;
+            dot.style.animationDuration = `${3 + Math.random() * 3}s`;
+            dot.style.animationDelay = `${Math.random() * 2}s`;
+            floatingDotsContainer.appendChild(dot);
+        }
+    </script>
+</body>
+</html>
