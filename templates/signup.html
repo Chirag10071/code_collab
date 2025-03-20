@@ -111,6 +111,7 @@
         <h1>Sign Up</h1>
         <form action="{{ url_for('signup') }}" method="post">
             <input type="text" id="name" name="name" placeholder="Enter your name" required>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
             <input type="password" id="password" name="password" placeholder="Create a password" minlength="8" required>
             <button type="submit" style="margin-top:1.5%;">Sign Up</button>
         </form>

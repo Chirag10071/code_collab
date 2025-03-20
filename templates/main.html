@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Project Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: rgb(20, 20, 20);
+            color: white;
+            text-align: center;
+            ;
+        }
+
+        /* Neon Glow Effect */
+        @keyframes neonGlow {
+            0% { text-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
+            50% { text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff; }
+            100% { text-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            box-shadow: 0px 0px 15px cyan;
+        }
+
+        .navbar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            animation: neonGlow 1.5s infinite alternate;
+            color: cyan;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            margin: 0 15px;
+            transition: 0.3s;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+
+        .navbar a:hover {
+            background: rgba(0, 255, 255, 0.2);
+            color: cyan;
+            box-shadow: 0px 0px 10px cyan;
+        }
+
+        /* Container Styles */
+        .container {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px cyan;
+            width: 60%;
+            margin-top: 120px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            animation: neonGlow 1.5s infinite alternate;
+        }
+
+        .username {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: cyan;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        button {
+            padding: 14px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            background: black;
+            color: cyan;
+            cursor: pointer;
+            transition: 0.3s ease-in-out;
+            box-shadow: 0px 0px 15px cyan;
+            animation: neonGlow 1.5s infinite alternate;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0px 0px 25px cyan;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px;
+            text-align: center;
+            font-size: 1em;
+            color: cyan;
+            box-shadow: 0px 0px 15px cyan;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">CodeCollab</div>
+        <div>
+            <a href="#">Home</a>
+            <a href="#">Profile</a>
+            <a href="#">Settings</a>
+            <a href="#">More ▾</a>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Welcome to Your Project Dashboard</h1>
+        <p class="username">Hello, <strong>{{ username }}</strong>!</p>
+        <div class="buttons">
+            <button>🚀 Create Project</button>
+            <button>🤝 Join Project</button>
+            <button>📂 View Projects</button>
+            <button>📊 Analytics</button>
+            <button>🛠 Manage Teams</button>
+            <button>📑 Documentation</button>
+        </div>
+    </div>
+    <div class="footer">
+        &copy; 2025 CodeCollab. All rights reserved.
+    </div>
+</body>
+</html>
