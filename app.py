@@ -1,16 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import random
 import string
 import hashlib
 import re
+import uuid
 from pymongo import MongoClient
+from flask_cors import CORS
+import sys
+from io import StringIO
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key"  # Required for session handling
 
 # MongoDB Setup
 client = MongoClient("mongodb://localhost:27017/")
 db = client["user_database"]
-users_collection = db["users"]
+users_collection = db["users"]  
 
 def generate_username(name):
     base_username = name.lower().replace(" ", "")
@@ -75,30 +80,157 @@ def login():
         
         if not user:
             error = "Username does not exist."
-            return render_template('login.html', error=error)
         elif user["password"] != hash_password(password):
             error = "Incorrect password."
-            return render_template('login.html', error=error)
         else:
-            return redirect(url_for('main_dashboard', username=username or ''))  # Redirect on successful login
+            session['username'] = username  # Store user session
+            return redirect(url_for('main_dashboard'))  # Redirect on successful login
         
     return render_template('login.html', error=error)
 
-@app.route('/main/<username>')
-def main_dashboard(username):
+@app.route('/main')
+def main_dashboard():
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('login'))  # Redirect if not logged in
     return render_template('main.html', username=username)
 
-@app.route('/create_project')
+@app.route('/create_project', methods=['GET', 'POST'])
 def create_project():
-    return "Create a new project page (To be implemented)."
+    if 'username' not in session:
+        return redirect(url_for('login'))  # Ensure user is logged in
 
-@app.route('/join_project')
+    if request.method == 'POST':
+        project_name = request.json.get('project_name')
+        project_description = request.json.get('description')
+        members_input = request.json.get('members')
+
+        # Split usernames by comma and remove whitespace
+        members = [member.strip() for member in members_input.split(",") if member.strip()]
+        #adding admin to members list
+        members.append(session.get('username'))
+        # Validate usernames
+        existing_users = db["users"].find({"username": {"$in": members}}, {"_id": 0, "username": 1})
+        existing_usernames = {user["username"] for user in existing_users}
+        invalid_users = list(set(members) - existing_usernames)
+
+        if invalid_users:
+            return jsonify({"status": "error", "message": "Some users do not exist", "invalid_users": invalid_users}), 400
+
+        # Generate unique project key
+        project_key = str(uuid.uuid4())
+
+        # Store project details in MongoDB
+        db["projects"].insert_one({
+            "project_key": project_key,
+            "name": project_name,
+            "description": project_description,
+            "admin": session.get('username'),  # Get session username
+            "members": list(existing_usernames),
+            "files": []
+        })
+
+        return jsonify({"status": "success", "message": "Project created successfully", "project_key": project_key}), 201
+
+    return render_template('create_project.html')
+
+@app.route('/join_project', methods=['GET', 'POST'])
 def join_project():
-    return "Join an existing project page (To be implemented)."
+    if 'username' not in session:
+        return redirect(url_for('login'))
 
-@app.route('/view_projects/<username>')
-def view_projects(username):
-    user_projects = db["projects"].find({"members": username})
+    if request.method == 'POST':
+        project_name = request.form.get('project_name')
+        project_key = request.form.get('project_key')
+        username = session.get('username')
+
+        # Find project by name and key
+        project = db["projects"].find_one({"name": project_name, "project_key": project_key})
+
+        if not project:
+            return jsonify({"status": "error", "message": "Invalid project name or project key"}), 400
+
+        if username in project["members"]:
+            return jsonify({"status": "error", "message": "You are already a member of this project"}), 400
+
+        # Add user to project members
+        db["projects"].update_one(
+            {"name": project_name, "project_key": project_key},
+            {"$addToSet": {"members": username}}
+        )
+
+        return jsonify({"status": "success", "message": "Successfully joined the project"}), 200
+
+    return render_template('join_project.html')  # Ensure the page renders for GET requests
+
+
+@app.route('/view_projects')
+def view_projects():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user_projects = list(db["projects"].find({"members": username}))  # Convert cursor to list
     return render_template('view_projects.html', username=username, projects=user_projects)
+
+@app.route('/logout')
+def logout():
+    session.clear()  # Clear session
+    return redirect(url_for('landing_page'))
+
+
+@app.route("/set_project_key", methods=["POST"])
+def set_project_key():
+    data = request.json
+    session["project_key"] = data.get("project_key")
+    print(session["project_key"])
+    return jsonify({"success": True})
+
+@app.route("/code_editor")
+def code_editor():
+    
+    if "project_key" not in session:
+        return redirect(url_for("view_projects"))
+    return render_template("code_editor.html")
+
+@app.route('/run', methods=['POST'])
+def run_code():
+    code = request.json['code']
+    old_stdout = sys.stdout
+    redirected_output = sys.stdout = StringIO()
+    
+    try:
+        exec(code)
+        sys.stdout = old_stdout
+        return jsonify({'output': redirected_output.getvalue()})
+    except Exception as e:
+        sys.stdout = old_stdout
+        return jsonify({'output': str(e)})
+
+@app.route("/save_files", methods=["POST"])
+def save_files():
+    if "project_key" not in session:
+        return jsonify({"success": False, "error": "No project selected"}), 403
+    
+    project_key = session["project_key"]
+    files = request.json.get("files", [])
+    
+    # Update files in project document
+    db["projects"].update_one(
+        {"project_key": project_key},
+        {"$set": {"files": files}}
+    )
+    return jsonify({"success": True})
+
+@app.route("/load_files", methods=["GET"])
+def load_files():
+    if "project_key" not in session:
+        return jsonify({"success": False, "error": "No project selected"}), 403
+    
+    project = db["projects"].find_one({"project_key": session["project_key"]})
+    if not project:
+        return jsonify({"success": False, "error": "Project not found"}), 404
+
+    return jsonify({"success": True, "files": project.get("files", [])})
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

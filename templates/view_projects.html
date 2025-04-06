@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Projects</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+
+      :root {
+          --primary: #00ffcc;
+          --secondary: #0077ff;
+          --accent: #ff00aa;
+          --dark-bg: #0d0d0d;
+          --darker-bg: #080808;
+          --light-bg: #1a1a1a;
+          --text: #e0e0e0;
+          --text-dim: #a0a0a0;
+          --success: #00ff88;
+          --error: #ff5555;
+          --code-green: #00ff00;
+          --code-blue: #61afef;
+          --code-purple: #c678dd;
+          --code-yellow: #e5c07b;
+      }
+
+      /* Hide scrollbars for all elements */
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: 'JetBrains Mono', monospace;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+      }
+
+      *::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
+      }
+
+      body {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+          background-color: var(--dark-bg);
+          background-image: 
+              radial-gradient(circle at 20% 30%, rgba(0, 119, 255, 0.1) 0%, transparent 25%),
+              radial-gradient(circle at 80% 70%, rgba(0, 255, 204, 0.1) 0%, transparent 25%);
+          color: var(--text);
+          position: relative;
+          overflow-x: hidden;
+      }
+
+      /* Floating code elements */
+      .floating-code {
+          position: absolute;
+          opacity: 0.05;
+          font-family: 'Fira Code', monospace;
+          z-index: -1;
+          animation: float 15s infinite linear;
+      }
+
+      @keyframes float {
+          0% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-50px) rotate(180deg); }
+          100% { transform: translateY(0) rotate(360deg); }
+      }
+
+      /* Navbar */
+      .navbar {
+          width: 100%;
+          background: rgba(15, 15, 15, 0.95);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 40px;
+          position: fixed;
+          top: 0;
+          left: 0;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          z-index: 1000;
+          backdrop-filter: blur(10px);
+      }
+
+      .navbar .logo {
+          font-size: 1.5em;
+          font-weight: bold;
+          background: linear-gradient(to right, var(--primary), var(--accent));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-family: 'Fira Code', monospace;
+          letter-spacing: -1px;
+      }
+
+      .nav-links {
+          display: flex;
+          gap: 15px;
+      }
+
+      .navbar a {
+          color: var(--text-dim);
+          text-decoration: none;
+          font-size: 0.95em;
+          transition: all 0.3s ease;
+          padding: 8px 15px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+      }
+
+      .navbar a:hover, .navbar a.active {
+          color: var(--primary);
+          background: rgba(0, 255, 204, 0.1);
+      }
+
+      .navbar a svg {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+      }
+
+      /* Main content */
+      main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 120px 20px 80px;
+          width: 100%;
+          overflow: hidden;
+      }
+
+      .container {
+          background: rgba(20, 20, 20, 0.8);
+          padding: 2.5em;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 900px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          animation: fadeIn 0.5s ease-out;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          overflow: hidden;
+      }
+
+      .container:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 15px 50px rgba(0, 119, 255, 0.2);
+      }
+
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+
+      h1 {
+          font-size: 2.2em;
+          margin-bottom: 0.8em;
+          color: var(--primary);
+          font-weight: 500;
+          text-align: center;
+          position: relative;
+          letter-spacing: -0.5px;
+      }
+
+      h1::after {
+          content: "";
+          position: absolute;
+          bottom: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 120px;
+          height: 3px;
+          background: linear-gradient(to right, transparent, var(--primary), transparent);
+          border-radius: 3px;
+      }
+
+      /* Projects table */
+      .projects-container {
+          width: 100%;
+          margin-top: 2em;
+          border-radius: 12px;
+          overflow: hidden;
+      }
+
+      table {
+          width: 100%;
+          border-collapse: collapse;
+          background: var(--darker-bg);
+          color: var(--text);
+          border-radius: 12px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+          transition: transform 0.3s ease;
+      }
+
+      table:hover {
+          transform: scale(1.005);
+      }
+
+      th, td {
+          padding: 15px 20px;
+          text-align: left;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      th {
+          background: linear-gradient(to right, rgba(0, 255, 204, 0.2), rgba(0, 119, 255, 0.2));
+          color: var(--primary);
+          font-size: 1em;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+      }
+
+      tr:last-child td {
+          border-bottom: none;
+      }
+
+      tr {
+          transition: all 0.2s ease;
+      }
+
+      tr:hover {
+          background: rgba(0, 119, 255, 0.1);
+          transform: translateX(5px);
+      }
+
+      td:first-child {
+          color: var(--primary);
+          font-weight: 500;
+      }
+
+      td:nth-child(2) {
+          color: var(--text-dim);
+          font-size: 0.95em;
+      }
+
+      /* No projects message */
+      .no-projects {
+          text-align: center;
+          margin-top: 3em;
+          padding: 2em;
+          background: rgba(20, 20, 20, 0.6);
+          border-radius: 12px;
+          border: 1px dashed rgba(255, 255, 255, 0.1);
+          max-width: 500px;
+      }
+
+      .no-projects h2 {
+          color: var(--primary);
+          margin-bottom: 0.5em;
+          font-size: 1.5em;
+      }
+
+      .no-projects p {
+          color: var(--text-dim);
+          margin-bottom: 1.5em;
+          line-height: 1.6;
+      }
+
+      .no-projects .cta-button {
+          display: inline-block;
+          padding: 10px 25px;
+          background: linear-gradient(to right, var(--primary), var(--secondary));
+          color: var(--dark-bg);
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+      }
+
+      .no-projects .cta-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+      }
+
+      /* Footer */
+      .footer {
+          width: 100%;
+          background: rgba(15, 15, 15, 0.9);
+          padding: 15px;
+          text-align: center;
+          font-size: 0.85em;
+          color: var(--text-dim);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+      }
+
+      /* Glow effects */
+      .glow {
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          filter: blur(60px);
+          opacity: 0.3;
+          z-index: -1;
+      }
+
+      .glow-1 {
+          background: var(--primary);
+          top: 20%;
+          left: 10%;
+          animation: float-glow 8s ease-in-out infinite;
+      }
+
+      .glow-2 {
+          background: var(--secondary);
+          bottom: 15%;
+          right: 10%;
+          animation: float-glow 10s ease-in-out infinite;
+      }
+
+      @keyframes float-glow {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(20px, 20px); }
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+          .navbar {
+              padding: 12px 20px;
+          }
+          
+          .container {
+              padding: 1.5em;
+              width: 95%;
+          }
+          
+          h1 {
+              font-size: 1.7em;
+          }
+          
+          .navbar .logo {
+              font-size: 1.3em;
+          }
+          
+          .navbar a {
+              padding: 6px 10px;
+              font-size: 0.85em;
+          }
+
+          th, td {
+              padding: 12px 15px;
+          }
+      }
+
+      @media (max-width: 480px) {
+          .container {
+              padding: 1.2em;
+          }
+          
+          h1 {
+              font-size: 1.5em;
+          }
+
+          th, td {
+              padding: 10px 12px;
+              font-size: 0.9em;
+          }
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  </head>
+  <body>
+    <!-- Floating code elements -->
+    <div class="floating-code" style="top:10%;left:5%;font-size:2em;">&lt;div&gt;</div>
+    <div class="floating-code" style="top:70%;left:80%;font-size:1.5em;">function()</div>
+    <div class="floating-code" style="top:30%;left:60%;font-size:3em;">{ }</div>
+    <div class="floating-code" style="top:80%;left:20%;font-size:1.2em;">const</div>
+    <div class="floating-code" style="top:50%;left:90%;font-size:2.5em;">import</div>
+
+    <!-- Glow effects -->
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <!-- Navbar -->
+    <div class="navbar">
+      <div class="logo">CodeCollab</div>
+      <div class="nav-links">
+        <a href="{{ url_for('main_dashboard', username=session['username']) }}">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+          Home
+        </a>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          Profile
+        </a>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+          Settings
+        </a>
+      </div>
+    </div>
+
+    <main>
+      <div class="container">
+        <h1>Your Projects</h1>
+        {% if projects %}
+        <div class="projects-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Description</th>
+                <th>Admin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for project in projects %}
+              <tr data-project-key="{{ project.project_key }}">
+                <td>{{ project.name }}</td>
+                <td>{{ project.description }}</td>
+                <td>{{ project.admin }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="no-projects">
+          <h2>No Projects Found</h2>
+          <p>You are not currently a member of any projects. Create a new project or ask to join an existing one to get started.</p>
+          <a href="#" class="cta-button">Create New Project</a>
+        </div>
+        {% endif %}
+      </div>
+    </main>
+
+    <div class="footer">&copy; 2025 CodeCollab | Version 2.4.1 | Developer Mode</div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("tbody tr").forEach(row => {
+                row.addEventListener("click", function () {
+                    const projectKey = this.getAttribute("data-project-key");
+        
+                    // Send project_key to backend
+                    fetch("/set_project_key", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ project_key: projectKey }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = "/code_editor"; // Redirect to code editor
+                        } else {
+                            alert("Failed to set project key.");
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+                });
+            });
+        });
+        </script>
+  </body>
+</html>
