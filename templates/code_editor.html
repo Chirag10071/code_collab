@@ -1,733 +1,968 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Python Online Editor | CodeCollab</title>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap");
-      :root {
-        /* Modern Neon Color Palette */
-        --neon-teal: #00f5d4;
-        --neon-magenta: #ff00aa;
-        --neon-blue: #00bbf9;
-        --neon-yellow: #fff07c;
-        --neon-lavender: #d4a5ff;
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Python Online Editor | CodeCollab</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+      <style>
+        @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap");
+        :root {
+          /* Modern Neon Color Palette */
+          --neon-teal: #00f5d4;
+          --neon-magenta: #ff00aa;
+          --neon-blue: #00bbf9;
+          --neon-yellow: #fff07c;
+          --neon-lavender: #d4a5ff;
 
-        /* Theme Variables */
-        --primary: var(--neon-teal);
-        --secondary: var(--neon-blue);
-        --accent: var(--neon-magenta);
-        --dark-bg: #121212;
-        --darker-bg: #0a0a0a;
-        --light-bg: #1e1e1e;
-        --text: #f5f5f5;
-        --text-dim: #b0b0b0;
-        --success: var(--neon-teal);
-        --error: #ff4d4d;
-        --code-green: var(--neon-teal);
-        --code-blue: var(--neon-blue);
-        --code-purple: var(--neon-lavender);
-        --code-yellow: var(--neon-yellow);
-        --editor-bg: #0f0f0f;
-        --output-bg: #151515;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "JetBrains Mono", monospace;
-      }
-
-      body {
-        background-color: var(--dark-bg);
-        background-image: radial-gradient(
-            circle at 10% 20%,
-            rgba(0, 245, 212, 0.05) 0%,
-            transparent 25%
-          ),
-          radial-gradient(
-            circle at 90% 80%,
-            rgba(0, 187, 249, 0.05) 0%,
-            transparent 25%
-          );
-      }
-
-      /* Floating code elements */
-      .floating-code {
-        position: absolute;
-        opacity: 0.05;
-        font-family: "Fira Code", monospace;
-        z-index: -1;
-        animation: float 15s infinite linear;
-      }
-
-      @keyframes float {
-        0% {
-          transform: translateY(0) rotate(0deg);
+          /* Theme Variables */
+          --primary: var(--neon-teal);
+          --secondary: var(--neon-blue);
+          --accent: var(--neon-magenta);
+          --dark-bg: #121212;
+          --darker-bg: #0a0a0a;
+          --light-bg: #1e1e1e;
+          --text: #f5f5f5;
+          --text-dim: #b0b0b0;
+          --success: var(--neon-teal);
+          --error: #ff4d4d;
+          --code-green: var(--neon-teal);
+          --code-blue: var(--neon-blue);
+          --code-purple: var(--neon-lavender);
+          --code-yellow: var(--neon-yellow);
+          --editor-bg: #0f0f0f;
+          --output-bg: #151515;
         }
-        50% {
-          transform: translateY(-50px) rotate(180deg);
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: "JetBrains Mono", monospace;
         }
-        100% {
-          transform: translateY(0) rotate(360deg);
+
+        body {
+          background-color: var(--dark-bg);
+          background-image: radial-gradient(
+              circle at 10% 20%,
+              rgba(0, 245, 212, 0.05) 0%,
+              transparent 25%
+            ),
+            radial-gradient(
+              circle at 90% 80%,
+              rgba(0, 187, 249, 0.05) 0%,
+              transparent 25%
+            );
         }
-      }
 
-      /* Navbar */
-      .navbar {
-        width: 100%;
-        background: rgba(15, 15, 15, 0.95);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 40px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 1000;
-        backdrop-filter: blur(10px);
-      }
-
-      .navbar .logo {
-        font-size: 1.5em;
-        font-weight: bold;
-        background: linear-gradient(to right, var(--primary), var(--accent));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-family: "Fira Code", monospace;
-        letter-spacing: -1px;
-      }
-
-      .nav-links {
-        display: flex;
-        gap: 15px;
-      }
-
-      .navbar a {
-        color: var(--text-dim);
-        text-decoration: none;
-        font-size: 0.95em;
-        transition: all 0.3s ease;
-        padding: 8px 15px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .navbar a:hover,
-      .navbar a.active {
-        color: var(--primary);
-        background: rgba(0, 255, 204, 0.1);
-      }
-
-      .navbar a svg {
-        width: 16px;
-        height: 16px;
-        fill: currentColor;
-      }
-
-      /* Main content */
-      main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 80px 20px 0; /* Changed from 100px 20px 80px */
-        width: 100%;
-        height: 10%;
-      }
-
-      /* Editor specific styles */
-      #file-manager {
-        background: rgba(20, 20, 20, 0.8);
-        padding: 15px 20px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        margin-bottom: 15px;
-        backdrop-filter: blur(10px);
-      }
-
-      #file-manager input,
-      #file-manager select {
-        padding: 8px 12px; /* Reduced padding */
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(10, 10, 10, 0.7);
-        color: var(--text);
-        font-size: 0.85em; /* Slightly smaller font */
-        transition: all 0.3s ease;
-        max-width: 150px;
-      }
-
-      #file-manager input:focus,
-      #file-manager select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(0, 255, 204, 0.2);
-      }
-
-      #file-manager input::placeholder {
-        color: var(--text-dim);
-        opacity: 0.5;
-      }
-
-      #file-manager button {
-        padding: 8px 12px; /* Reduced from 10px 20px */
-        font-size: 0.85em; /* Reduced from 0.95em */
-        font-weight: 500;
-        border: none;
-        border-radius: 6px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: var(--dark-bg);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px; /* Reduced from 8px */
-        white-space: nowrap;
-      }
-
-      #file-manager button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
-        margin-bottom: 0; /* Changed from 15px */
-        border-radius: 0 0 8px 8px;
-      }
-      #fileList {
-        max-width: 150px; /* Limit width of file selector */
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      #file-info {
-        background: rgba(0, 119, 255, 0.1);
-        color: var(--code-blue);
-        padding: 10px 20px;
-        font-size: 0.9em;
-        font-family: "Fira Code", monospace;
-        border-left: 3px solid var(--code-blue);
-        border-radius: 4px;
-        margin-bottom: 15px;
-      }
-
-      .container {
-        display: flex;
-        height: calc(
-          100vh - 80px - 45px
-        ); /* navbar height + file-manager height */
-        margin: 0;
-        padding: 0;
-        background: rgba(20, 20, 20, 0.8);
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-      }
-
-      #editor {
-        width: 90%;
-        height: 100%;
-        font-size: 14px;
-        background-color: var(--editor-bg);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      #output {
-        width: 30%;
-        height: 100%;
-        background-color: var(--output-bg);
-        color: var(--text);
-        padding: 15px;
-        overflow-y: auto;
-        font-family: "Fira Code", monospace;
-        white-space: pre-wrap;
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        line-height: 1.5;
-      }
-
-      .btn-container {
-        position: fixed;
-        bottom: 60px; /* Adjust based on footer height */
-        right: 30px;
-        z-index: 100;
-      }
-
-      .black-button {
-        padding: 12px 24px;
-        font-size: 1em;
-        font-weight: 500;
-        border: none;
-        border-radius: 6px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: var(--dark-bg);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
-      }
-
-      .black-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
-      }
-
-      /* Status message */
-      .status-message {
-        margin-top: 1.5em;
-        padding: 12px 15px;
-        border-radius: 6px;
-        font-size: 0.9em;
-        animation: slideIn 0.3s ease-out;
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        /* Floating code elements */
+        .floating-code {
+          position: absolute;
+          opacity: 0.05;
+          font-family: "Fira Code", monospace;
+          z-index: -1;
+          animation: float 15s infinite linear;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+
+        @keyframes float {
+          0% {
+            transform: translateY(0) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-50px) rotate(180deg);
+          }
+          100% {
+            transform: translateY(0) rotate(360deg);
+          }
         }
-      }
 
-      .success {
-        background: rgba(0, 255, 136, 0.1);
-        border-left: 3px solid var(--success);
-        color: var(--success);
-      }
-
-      .error {
-        background: rgba(255, 85, 85, 0.1);
-        border-left: 3px solid var(--error);
-        color: var(--error);
-      }
-
-      .message {
-        background: rgba(0, 119, 255, 0.1);
-        border-left: 3px solid var(--code-blue);
-        color: var(--code-blue);
-      }
-
-      /* Footer */
-      .footer {
-        width: 100%;
-        background: rgba(15, 15, 15, 0.9);
-        padding: 15px;
-        text-align: center;
-        font-size: 0.85em;
-        color: var(--text-dim);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        margin-top: auto;
-      }
-
-      .footer-links {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 10px;
-      }
-
-      .footer-links a {
-        color: var(--text-dim);
-        text-decoration: none;
-        transition: color 0.3s ease;
-      }
-
-      .footer-links a:hover {
-        color: var(--primary);
-      }
-
-      /* ACE Editor customizations */
-      .ace_gutter {
-        background: var(--editor-bg) !important;
-        color: var(--text-dim) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-      }
-
-      .ace_gutter-active-line {
-        background: rgba(0, 255, 204, 0.1) !important;
-      }
-
-      .ace_active-line {
-        background: rgba(0, 255, 204, 0.05) !important;
-      }
-
-      .ace_cursor {
-        color: var(--primary) !important;
-      }
-
-      .ace_marker-layer .ace_selection {
-        background: rgba(0, 119, 255, 0.3) !important;
-      }
-
-      /* Responsive design */
-      @media (max-width: 768px) {
-        main {
-          padding: 72px 15px 0; /* Adjusted from 90px 15px 70px */
-        }
+        /* Navbar */
         .navbar {
-          padding: 12px 20px;
+          width: 100%;
+          background: rgba(15, 15, 15, 0.95);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 40px;
+          position: fixed;
+          top: 0;
+          left: 0;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          z-index: 1000;
+          backdrop-filter: blur(10px);
         }
 
         .navbar .logo {
-          font-size: 1.3em;
+          font-size: 1.5em;
+          font-weight: bold;
+          background: linear-gradient(to right, var(--primary), var(--accent));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-family: "Fira Code", monospace;
+          letter-spacing: -1px;
+        }
+
+        .nav-links {
+          display: flex;
+          gap: 15px;
         }
 
         .navbar a {
-          padding: 6px 10px;
-          font-size: 0.85em;
-        }
-
-        main {
-          padding: 90px 15px 70px;
-        }
-
-        .container {
-          flex-direction: column;
-          height: calc(100vh - 200px);
-        }
-
-        #editor,
-        #output {
-          width: 100%;
-          height: 75%;
-        }
-
-        #output {
-          height: 25%;
-        }
-
-        #file-manager {
-          max-width: 100%; /* Full width on mobile */
-          padding: 8px 10px; /* Even more compact on mobile */
+          color: var(--text-dim);
+          text-decoration: none;
+          font-size: 0.95em;
+          transition: all 0.3s ease;
+          padding: 8px 15px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
           gap: 6px;
         }
 
-        .btn-container {
-          bottom: 20px;
-          right: 20px;
+        .navbar a:hover,
+        .navbar a.active {
+          color: var(--primary);
+          background: rgba(0, 255, 204, 0.1);
         }
+
+        .navbar a svg {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+        }
+
+        /* Main content */
+        main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 80px 20px 0;
+          width: 100%;
+          height: 10%;
+        }
+
+        /* Editor specific styles */
+        #file-manager {
+          background: rgba(20, 20, 20, 0.8);
+          padding: 15px 20px;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          flex-wrap: wrap;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          margin-bottom: 15px;
+          backdrop-filter: blur(10px);
+        }
+
         #file-manager input,
-        #file-manager select,
+        #file-manager select {
+          padding: 8px 12px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(10, 10, 10, 0.7);
+          color: var(--text);
+          font-size: 0.85em;
+          transition: all 0.3s ease;
+          max-width: 150px;
+        }
+
+        #file-manager input:focus,
+        #file-manager select:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px rgba(0, 255, 204, 0.2);
+        }
+
+        #file-manager input::placeholder {
+          color: var(--text-dim);
+          opacity: 0.5;
+        }
+
         #file-manager button {
-          padding: 6px 8px;
-          font-size: 0.8em;
+          padding: 8px 12px;
+          font-size: 0.85em;
+          font-weight: 500;
+          border: none;
+          border-radius: 6px;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: var(--dark-bg);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          white-space: nowrap;
         }
 
+        #file-manager button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
+          margin-bottom: 0;
+          border-radius: 0 0 8px 8px;
+        }
         #fileList {
-          max-width: 120px; /* More narrow on mobile */
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-      }
+        #file-info {
+          background: rgba(0, 119, 255, 0.1);
+          color: var(--code-blue);
+          padding: 10px 20px;
+          font-size: 0.9em;
+          font-family: "Fira Code", monospace;
+          border-left: 3px solid var(--code-blue);
+          border-radius: 4px;
+          margin-bottom: 15px;
+        }
 
-      /* Scrollbar styling */
-      ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-      }
+        .container {
+          display: flex;
+          height: calc(100vh - 80px - 45px);
+          margin: 0;
+          padding: 0;
+          background: rgba(20, 20, 20, 0.8);
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
 
-      ::-webkit-scrollbar-track {
-        background: var(--darker-bg);
-      }
+        #editor {
+          width: 70%;
+          height: 100%;
+          font-size: 14px;
+          background-color: var(--editor-bg);
+          color: var(--text);
+          padding: 15px;
+          border: none;
+          resize: none;
+          font-family: "Fira Code", monospace;
+          line-height: 1.5;
+          tab-size: 4;
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-      ::-webkit-scrollbar-thumb {
-        background: var(--secondary);
-        border-radius: 5px;
-      }
+        #output {
+          width: 30%;
+          height: 100%;
+          background-color: var(--output-bg);
+          color: var(--text);
+          padding: 15px;
+          overflow-y: auto;
+          font-family: "Fira Code", monospace;
+          white-space: pre-wrap;
+          border-left: 1px solid rgba(255, 255, 255, 0.1);
+          line-height: 1.5;
+        }
 
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--primary);
-      }
-    </style>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  </head>
-  <body>
-    <!-- Floating code elements -->
-    <div class="floating-code" style="top: 10%; left: 5%; font-size: 2em">
-      &lt;div&gt;
-    </div>
-    <div class="floating-code" style="top: 70%; left: 80%; font-size: 1.5em">
-      function()
-    </div>
-    <div class="floating-code" style="top: 30%; left: 60%; font-size: 3em">
-      { }
-    </div>
-    <div class="floating-code" style="top: 80%; left: 20%; font-size: 1.2em">
-      const
-    </div>
-    <div class="floating-code" style="top: 50%; left: 90%; font-size: 2.5em">
-      import
-    </div>
+        .btn-container {
+          position: fixed;
+          bottom: 60px;
+          right: 30px;
+          z-index: 100;
+        }
 
-    <!-- Navbar -->
-    <div class="navbar">
-      <div class="logo">CodeCollab</div>
-      <div class="nav-links">
-        <a href="/main">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
-          Home
-        </a>
-        <a href="#">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-            />
-          </svg>
-          Profile
-        </a>
-        <a href="#">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-            />
-          </svg>
-          Settings
-        </a>
+        .black-button {
+          padding: 12px 24px;
+          font-size: 1em;
+          font-weight: 500;
+          border: none;
+          border-radius: 6px;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: var(--dark-bg);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .black-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+        }
+
+        /* Status message */
+        .status-message {
+          margin-top: 1.5em;
+          padding: 12px 15px;
+          border-radius: 6px;
+          font-size: 0.9em;
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .success {
+          background: rgba(0, 255, 136, 0.1);
+          border-left: 3px solid var(--success);
+          color: var(--success);
+        }
+
+        .error {
+          background: rgba(255, 85, 85, 0.1);
+          border-left: 3px solid var(--error);
+          color: var(--error);
+        }
+
+        .message {
+          background: rgba(0, 119, 255, 0.1);
+          border-left: 3px solid var(--code-blue);
+          color: var(--code-blue);
+        }
+
+        /* Footer */
+        .footer {
+          width: 100%;
+          background: rgba(15, 15, 15, 0.9);
+          padding: 15px;
+          text-align: center;
+          font-size: 0.85em;
+          color: var(--text-dim);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          margin-top: auto;
+        }
+
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-top: 10px;
+        }
+
+        .footer-links a {
+          color: var(--text-dim);
+          text-decoration: none;
+          transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+          color: var(--primary);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+          main {
+            padding: 72px 15px 0;
+          }
+          .navbar {
+            padding: 12px 20px;
+          }
+
+          .navbar .logo {
+            font-size: 1.3em;
+          }
+
+          .navbar a {
+            padding: 6px 10px;
+            font-size: 0.85em;
+          }
+
+          main {
+            padding: 90px 15px 70px;
+          }
+
+          .container {
+            flex-direction: column;
+            height: calc(100vh - 200px);
+          }
+
+          #editor,
+          #output {
+            width: 100%;
+          }
+
+          #editor {
+            height: 75%;
+          }
+
+          #output {
+            height: 25%;
+          }
+
+          #file-manager {
+            max-width: 100%;
+            padding: 8px 10px;
+            gap: 6px;
+          }
+
+          .btn-container {
+            bottom: 20px;
+            right: 20px;
+          }
+          #file-manager input,
+          #file-manager select,
+          #file-manager button {
+            padding: 6px 8px;
+            font-size: 0.8em;
+          }
+
+          #fileList {
+            max-width: 120px;
+          }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+          width: 10px;
+          height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: var(--darker-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: var(--secondary);
+          border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: var(--primary);
+        }
+        .collaborator-cursor {
+          position: absolute;
+          width: 2px;
+          height: 20px;
+          background-color: #ff0000;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        .collaborator-selection {
+          position: absolute;
+          background-color: rgba(0, 255, 0, 0.3);
+          z-index: 5;
+          pointer-events: none;
+        }
+        
+        .user-list {
+          position: fixed;
+          right: 20px;
+          top: 80px;
+          background: rgba(20, 20, 20, 0.9);
+          padding: 15px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+          z-index: 1000;
+          max-width: 200px;
+          color: var(--neon-lavender);
+        }
+        
+        .user-list h3 {
+          color: var(--primary);
+          margin-bottom: 10px;
+          font-size: 1em;
+        }
+        
+        .user-list ul {
+          list-style: none;
+        }
+        
+        .user-list li {
+          display: flex;
+          align-items: center;
+          margin-bottom: 8px;
+          font-size: 0.9em;
+        }
+        
+        .user-color {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          margin-right: 8px;
+        }
+        
+        #editor-container {
+          position: relative;
+          width: 70%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+          overflow: hidden; /* Add this to prevent any scrollbar issues */
+        }
+        #editor {
+          width: 100%; /* Change from 70% to 100% */
+          height: 100%;
+          font-size: 14px;
+          background-color: var(--editor-bg);
+          color: var(--text);
+          padding: 15px;
+          border: none;
+          resize: none;
+          font-family: "Fira Code", monospace;
+          line-height: 1.5;
+          tab-size: 4;
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
+          box-sizing: border-box; /* Ensure padding is included in width/height */
+        }      
+      </style>
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      />
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    </head>
+    <body>
+      <!-- Floating code elements -->
+      <div class="floating-code" style="top: 10%; left: 5%; font-size: 2em">
+        &lt;div&gt;
       </div>
-    </div>
+      <div class="floating-code" style="top: 70%; left: 80%; font-size: 1.5em">
+        function()
+      </div>
+      <div class="floating-code" style="top: 30%; left: 60%; font-size: 3em">
+        { }
+      </div>
+      <div class="floating-code" style="top: 80%; left: 20%; font-size: 1.2em">
+        const
+      </div>
+      <div class="floating-code" style="top: 50%; left: 90%; font-size: 2.5em">
+        import
+      </div>
 
-    <!-- Main content -->
-    <main>
-      <div id="file-manager">
-        <input type="text" id="newFileName" placeholder="Enter filename" />
-        <button onclick="createFile()">
+      <!-- Navbar -->
+      <div class="navbar">
+        <div class="logo">CodeCollab</div>
+        <div class="nav-links">
+          <a href="/main">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
+            Home
+          </a>
+          <a href="#">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+              />
+            </svg>
+            Profile
+          </a>
+          <a href="#">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+              />
+            </svg>
+            Settings
+          </a>
+        </div>
+      </div>
+      <!-- Main content -->
+      <main>
+        <div id="file-manager">
+          <input type="text" id="newFileName" placeholder="Enter filename" />
+          <button onclick="createFile()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            >
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
+            </svg>
+            New File
+          </button>
+          <button onclick="deleteFile()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            >
+              <path
+                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                fill="currentColor"
+              />
+            </svg>
+            Delete File
+          </button>
+          <select id="fileList" onchange="switchFile()"></select>
+          <button onclick="saveFiles()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            >
+              <path
+                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"
+                fill="currentColor"
+              />
+            </svg>
+            Save
+          </button>
+        </div>
+        <div class="container">
+          <div id="editor-container">
+            <textarea id="editor" spellcheck="false"></textarea>
+          </div>
+          <div id="output"></div>
+        </div>
+      </main>
+
+      <!-- Run Button -->
+      <div class="btn-container">
+        <button class="black-button" id="runButton">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            width="16"
-            height="16"
+            width="18"
+            height="18"
           >
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
+            <path d="M8 5v14l11-7z" fill="currentColor" />
           </svg>
-          New File
-        </button>
-        <button onclick="deleteFile()">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-          >
-            <path
-              d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-              fill="currentColor"
-            />
-          </svg>
-          Delete File
-        </button>
-        <select id="fileList" onchange="switchFile()"></select>
-        <button onclick="saveFiles()">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-          >
-            <path
-              d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"
-              fill="currentColor"
-            />
-          </svg>
-          Save
+          <span id="buttonText">Run Code</span>
+          <i
+            class="fas fa-circle-notch fa-spin"
+            id="loadingIcon"
+            style="display: none; margin-left: 10px"
+          ></i>
         </button>
       </div>
-      <!--
-        <div id="file-info"></div>
--->
-      <div class="container">
-        <div id="editor"></div>
-        <div id="output"></div>
+
+      <!-- Footer -->
+      <div class="footer">
+        &copy; 2025 CodeCollab | Version 2.4.1 | Developer Mode
       </div>
-    </main>
 
-    <!-- Run Button -->
-    <div class="btn-container">
-      <button class="black-button" id="runButton">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-        >
-          <path d="M8 5v14l11-7z" fill="currentColor" />
-        </svg>
-        <span id="buttonText">Run Code</span>
-        <i
-          class="fas fa-circle-notch fa-spin"
-          id="loadingIcon"
-          style="display: none; margin-left: 10px"
-        ></i>
-      </button>
-    </div>
+      <script>
+        // Replace the existing script with this updated version
+        const editorElement = document.getElementById('editor');
+        const outputElement = document.getElementById('output');
+        const runButton = document.getElementById('runButton');
+        const loadingIcon = document.getElementById('loadingIcon');
+        const usersList = document.getElementById('users');
+        
+        let files = {};
+        let currentFile = "";
+        let cursors = {};
+        let socket;
+        let clientId;
+        let currentDocId = sessionStorage.getItem("project_key") || "default";
+        let userName = `User${Math.floor(Math.random() * 1000)}`;
 
-    <!-- Footer -->
-    <div class="footer">
-      &copy; 2025 CodeCollab | Version 2.4.1 | Developer Mode
-    </div>
-
-    <script>
-      let editor = ace.edit("editor");
-      editor.setTheme("ace/theme/dracula");
-      editor.session.setMode("ace/mode/python");
-      editor.setOptions({
-        fontSize: "14px",
-        fontFamily: "'Fira Code', monospace",
-        enableBasicAutocompletion: true,
-        enableLiveAutocompletion: true,
-        showPrintMargin: false,
-        highlightActiveLine: true,
-        highlightSelectedWord: true,
-        showLineNumbers: true,
-        showGutter: true,
-        tabSize: 4,
-      });
-
-      let files = {};
-      let currentFile = "";
-
-      function createFile() {
-        const filename = document.getElementById("newFileName").value.trim();
-
-        if (!filename) {
-          alert("Please enter a filename.");
-          return;
-        }
-
-        if (!filename.endsWith(".py")) {
-          alert("Only .py files are allowed.");
-          return;
-        }
-
-        if (files[filename]) {
-          alert("File already exists.");
-          return;
-        }
-
-        files[filename] = "";
-        addFileToList(filename);
-        switchToFile(filename);
-      }
-
-      function deleteFile() {
-        if (!currentFile) return;
-        if (confirm(`Delete ${currentFile}?`)) {
-          delete files[currentFile];
-          document
-            .getElementById("fileList")
-            .querySelector(`[value="${currentFile}"]`)
-            .remove();
-          currentFile = Object.keys(files)[0] || "";
-          switchToFile(currentFile);
-        }
-      }
-
-      function addFileToList(filename) {
-        const option = document.createElement("option");
-        option.value = filename;
-        option.textContent = filename;
-        document.getElementById("fileList").appendChild(option);
-      }
-
-      function switchToFile(filename) {
-        if (currentFile) {
-          files[currentFile] = editor.getValue();
-        }
-        currentFile = filename;
-        editor.setValue(files[filename] || "", -1);
-        document.getElementById("fileList").value = filename;
-        document.getElementById("file-info").innerText = filename;
-      }
-
-      function switchFile() {
-        const selected = document.getElementById("fileList").value;
-        switchToFile(selected);
-      }
-
-      function saveFiles() {
-        if (currentFile) {
-          files[currentFile] = editor.getValue();
-        }
-        const fileArray = Object.keys(files).map((fname) => ({
-          filename: fname,
-          content: files[fname],
-        }));
-        fetch("/save_files", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ files: fileArray }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            const status = document.createElement("div");
-            status.className = data.success
-              ? "status-message success"
-              : "status-message error";
-            status.textContent = data.success
-              ? "Files saved successfully!"
-              : "Error saving files.";
-            document.querySelector("main").appendChild(status);
-            setTimeout(() => status.remove(), 3000);
+        // Initialize Socket.IO connection
+        function initSocket() {
+          socket = io();
+          
+          socket.on('connect', () => {
+            console.log('Connected to WebSocket server');
+            socket.emit('join_document', {
+              docId: currentDocId,
+              name: userName
+            });
           });
-      }
-
-      function loadFiles() {
-        fetch("/load_files")
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              data.files.forEach((file) => {
-                files[file.filename] = file.content;
-                addFileToList(file.filename);
-              });
-              if (data.files.length > 0) {
-                switchToFile(data.files[0].filename);
-              }
+          
+          socket.on('init_document', (data) => {
+            // Initialize editor with current content
+            editorElement.value = data.content;
+            updateUserList(data.users);
+          });
+          
+          socket.on('text_update', (data) => {
+            if (data.userId !== clientId) {
+              editorElement.value = data.content;
             }
           });
-      }
+          
+          socket.on('cursor_update', (data) => {
+            updateCursor(data.userId, data.position, data.color);
+          });
+          
+          socket.on('user_joined', (data) => {
+            addUserToList(data.userId, data.userData);
+          });
+          
+          socket.on('user_left', (data) => {
+            removeUser(data.userId);
+          });
+        }
+        
+        function updateUserList(users) {
+          usersList.innerHTML = '';
+          for (const [userId, userData] of Object.entries(users)) {
+            addUserToList(userId, userData);
+          }
+        }
+        
+        function addUserToList(userId, userData) {
+          const li = document.createElement('li');
+          li.id = `user-${userId}`;
+          
+          const colorSpan = document.createElement('span');
+          colorSpan.className = 'user-color';
+          colorSpan.style.backgroundColor = userData.color;
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = userData.name;
+          
+          li.appendChild(colorSpan);
+          li.appendChild(nameSpan);
+          usersList.appendChild(li);
+          
+          // Create cursor element if it doesn't exist
+          if (!cursors[userId]) {
+            const cursor = document.createElement('div');
+            cursor.className = 'collaborator-cursor';
+            cursor.style.backgroundColor = userData.color;
+            cursor.setAttribute('data-user', userId);
+            document.getElementById('editor-container').appendChild(cursor);
+            cursors[userId] = cursor;
+          }
+        }
+        
+        function removeUser(userId) {
+          const userElement = document.getElementById(`user-${userId}`);
+          if (userElement) {
+            userElement.remove();
+          }
+          if (cursors[userId]) {
+            cursors[userId].remove();
+            delete cursors[userId];
+          }
+        }
+        
+        function updateCursor(userId, position, color) {
+          const cursor = cursors[userId];
+          if (cursor) {
+            // Simplified cursor positioning - in a real app you'd need more complex logic
+            const lineHeight = 20; // Approximate line height
+            const lines = editorElement.value.substr(0, position).split('\n');
+            const lineNum = lines.length - 1;
+            const colNum = lines[lines.length - 1].length;
+            
+            // Calculate approximate position
+            const top = lineNum * lineHeight + 15; // 15px is editor padding
+            const left = colNum * 8 + 15; // 8px is approximate character width
+            
+            cursor.style.top = `${top}px`;
+            cursor.style.left = `${left}px`;
+            cursor.style.height = `${lineHeight}px`;
+            cursor.style.backgroundColor = color;
+          }
+        }
+        
+        // Utility functions
+        function debounce(func, wait) {
+          let timeout;
+          return function() {
+            const context = this, args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+          };
+        }
+        
+        function throttle(func, limit) {
+          let lastFunc;
+          let lastRan;
+          return function() {
+            const context = this;
+            const args = arguments;
+            if (!lastRan) {
+              func.apply(context, args);
+              lastRan = Date.now();
+            } else {
+              clearTimeout(lastFunc);
+              lastFunc = setTimeout(function() {
+                if ((Date.now() - lastRan) >= limit) {
+                  func.apply(context, args);
+                  lastRan = Date.now();
+                }
+              }, limit - (Date.now() - lastRan));
+            }
+          };
+        }
+        
+        // Editor event listeners
+        editorElement.addEventListener('input', debounce(() => {
+          if (currentFile) files[currentFile] = editorElement.value;
+          
+          if (socket) {
+            socket.emit('text_update', {
+              content: editorElement.value
+            });
+          }
+        }, 200));
+        
+        editorElement.addEventListener('keyup', updateCursorPosition);
+        editorElement.addEventListener('click', updateCursorPosition);
+        editorElement.addEventListener('mousemove', throttle(updateCursorPosition, 100));
+        
+        function updateCursorPosition() {
+          const position = editorElement.selectionStart;
+          
+          if (socket) {
+            socket.emit('cursor_update', {
+              position: position
+            });
+          }
+        }
+        
+        // Keep all existing file management functions (createFile, deleteFile, etc.)
+        function createFile() {
+          const filename = document.getElementById("newFileName").value.trim();
 
-      $("#runButton").click(function () {
-        if (currentFile) files[currentFile] = editor.getValue();
-        const code = editor.getValue();
-        const loadingIcon = document.getElementById("loadingIcon");
-        loadingIcon.style.display = "inline-block";
+          if (!filename) {
+            alert("Please enter a filename.");
+            return;
+          }
 
-        $.ajax({
-          url: "/run",
-          method: "POST",
-          contentType: "application/json",
-          data: JSON.stringify({ code: code }),
-          success: function (response) {
-            $("#output").text(response.output);
+          if (!filename.endsWith(".py")) {
+            alert("Only .py files are allowed.");
+            return;
+          }
+
+          if (files[filename]) {
+            alert("File already exists.");
+            return;
+          }
+
+          files[filename] = "";
+          addFileToList(filename);
+          switchToFile(filename);
+        }
+
+        function deleteFile() {
+          if (!currentFile) return;
+          if (confirm(`Delete ${currentFile}?`)) {
+            delete files[currentFile];
+            document
+              .getElementById("fileList")
+              .querySelector(`[value="${currentFile}"]`)
+              .remove();
+            currentFile = Object.keys(files)[0] || "";
+            switchToFile(currentFile);
+          }
+        }
+
+        function addFileToList(filename) {
+          const option = document.createElement("option");
+          option.value = filename;
+          option.textContent = filename;
+          document.getElementById("fileList").appendChild(option);
+        }
+
+        function switchToFile(filename) {
+          if (currentFile) {
+            files[currentFile] = editorElement.value;
+          }
+          currentFile = filename;
+          editorElement.value = files[filename] || "";
+          document.getElementById("fileList").value = filename;
+        }
+
+        function switchFile() {
+          const selected = document.getElementById("fileList").value;
+          switchToFile(selected);
+        }
+
+        function saveFiles() {
+          if (currentFile) {
+            files[currentFile] = editorElement.value;
+          }
+          const fileArray = Object.keys(files).map((fname) => ({
+            filename: fname,
+            content: files[fname],
+          }));
+          fetch("/save_files", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ files: fileArray }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              const status = document.createElement("div");
+              status.className = data.success
+                ? "status-message success"
+                : "status-message error";
+              status.textContent = data.success
+                ? "Files saved successfully!"
+                : "Error saving files.";
+              document.querySelector("main").appendChild(status);
+              setTimeout(() => status.remove(), 3000);
+            });
+        }
+
+        function loadFiles() {
+          fetch("/load_files")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                data.files.forEach((file) => {
+                  files[file.filename] = file.content;
+                  addFileToList(file.filename);
+                });
+                if (data.files.length > 0) {
+                  switchToFile(data.files[0].filename);
+                }
+              }
+            });
+        }
+
+        runButton.addEventListener('click', function() {
+          if (currentFile) files[currentFile] = editorElement.value;
+          const code = editorElement.value;
+          loadingIcon.style.display = "inline-block";
+
+          fetch("/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code })
+          })
+          .then(response => response.json())
+          .then(data => {
+            outputElement.textContent = data.output;
             loadingIcon.style.display = "none";
-          },
-          error: function () {
+          })
+          .catch(error => {
+            outputElement.textContent = "Error: " + error.message;
             loadingIcon.style.display = "none";
-          },
+          });
         });
-      });
 
-      loadFiles();
-    </script>
-  </body>
-</html>
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+          initSocket();
+          loadFiles();
+          
+          // Add basic editor enhancements
+          editorElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              const start = this.selectionStart;
+              const end = this.selectionEnd;
+              
+              // Insert tab character
+              this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+              
+              // Move cursor position
+              this.selectionStart = this.selectionEnd = start + 1;
+              
+              // Trigger update
+              this.dispatchEvent(new Event('input'));
+            }
+          });
+        });
+      </script>
+    </body>
+  </html>
