@@ -4,6 +4,7 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Python Online Editor | CodeCollab</title>
+      
       <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
       <style>
         @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap");
@@ -40,7 +41,8 @@
           box-sizing: border-box;
           font-family: "JetBrains Mono", monospace;
         }
-
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        #input { width: 80%; }
         body {
           background-color: var(--dark-bg);
           background-image: radial-gradient(
@@ -567,6 +569,7 @@
           </a>
         </div>
       </div>
+
       <!-- Main content -->
       <main>
         <div id="file-manager">
@@ -619,7 +622,7 @@
           <div id="output"></div>
         </div>
       </main>
-
+      <a href="{{ url_for('chat') }}">Chat</a>
       <!-- Run Button -->
       <div class="btn-container">
         <button class="black-button" id="runButton">

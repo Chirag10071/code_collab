@@ -342,6 +342,30 @@ def get_color_for_id(client_id):
     hue = hash_val % 360
     return f'hsl({hue}, 70%, 50%)'
 
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
+@app.route('/manage_teams')
+def manage_teams():
+    return render_template('teams.html')
+
+@app.route('/documentation')
+def documentation():
+    return render_template('documentation.html')
+
+@app.route('/chat')
+def chat():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('chat.html', username=session['username'])
+
+@socketio.on('chat_message')
+def handle_chat_message(data):
+    message = data['message']
+    username = data['username']
+    emit('chat_message', {'message': message, 'username': username}, broadcast=True)
+
 # Update the main function to use socketio.run
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=8080)

@@ -363,19 +363,19 @@
                     <p>Browse and manage all your current projects</p>
                 </a>
                 
-                <a href="#" class="dashboard-button">
+                <a href="{{ url_for('analytics') }}" class="dashboard-button">
                     <i class="fas fa-chart-line"></i>
                     <h3>Analytics</h3>
                     <p>Track your coding activity and project metrics</p>
                 </a>
                 
-                <a href="#" class="dashboard-button">
+                <a href="{{ url_for('manage_teams') }}" class="dashboard-button">
                     <i class="fas fa-users-cog"></i>
                     <h3>Manage Teams</h3>
                     <p>Organize your collaborators and set permissions</p>
                 </a>
                 
-                <a href="#" class="dashboard-button">
+                <a href="{{ url_for('documentation') }}" class="dashboard-button">
                     <i class="fas fa-book"></i>
                     <h3>Documentation</h3>
                     <p>Access API docs and developer resources</p>
